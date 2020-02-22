@@ -25,44 +25,12 @@ namespace Plugin.FilePicker.Abstractions
         /// On WPF, specify strings like this: "Data type (*.ext)|*.ext", which
         /// corresponds how the Windows file open dialog specifies file types.
         /// </param>
+        /// <param name="saving">
+        /// Tells the implementor whether the action is intended to save a file or not
+        /// </param>
         /// <returns>
         /// File data object, or null when user cancelled picking file
         /// </returns>
-        Task<FileData> PickFile(string[] allowedTypes = null);
-
-        /// <summary>
-        /// Saves the file that was picked to external storage.
-        /// </summary>
-        /// <param name="fileToSave">
-        /// File data from a call to PickFile() that should be saved.
-        /// </param>
-        /// <returns>
-        /// True when file was saved successfully, false when there was an
-        /// error
-        /// </returns>
-        [Obsolete("The SaveFile() method is obsolete; store the picked file with system functions from System.IO or read from stream directly")]
-        Task<bool> SaveFile(FileData fileToSave);
-
-        /// <summary>
-        /// Opens the file with given filename in an external application that
-        /// is registered for this file type.
-        /// </summary>
-        /// <param name="fileToOpen">
-        /// Full filename of the file to open
-        /// </param>
-        [Obsolete("The OpenFile() method is obsolete; please use Xamarin.Essentials Launcher plugin. The FilePicker plugins just concentrates on picking files")]
-        void OpenFile(string fileToOpen);
-
-        /// <summary>
-        /// Opens the file specified by first storing the file to external
-        /// storage, then opening it in an external application that is
-        /// registered for this file type. This is a combination of SaveFile()
-        /// and OpenFile() above.
-        /// </summary>
-        /// <param name="fileToOpen">
-        /// File data from a call to PickFile() that should be opened.
-        /// </param>
-        [Obsolete("The OpenFile() method is obsolete; please use Xamarin.Essentials Launcher plugin. The FilePicker plugins just concentrates on picking files")]
-        void OpenFile(FileData fileToOpen);
+        Task<FileData> PickFile(string[] allowedTypes = null, bool saving = false);
     }
 }

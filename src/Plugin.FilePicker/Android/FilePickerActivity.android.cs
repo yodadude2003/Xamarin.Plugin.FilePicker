@@ -25,6 +25,8 @@ namespace Plugin.FilePicker
         /// </summary>
         public const string ExtraAllowedTypes = "EXTRA_ALLOWED_TYPES";
 
+        public const string PromptType = "PROMPT_TYPE";
+
         /// <summary>
         /// This variable gets passed when the request for the permission to access storage
         /// gets send and then gets again read whne the request gets answered.
@@ -50,7 +52,7 @@ namespace Plugin.FilePicker
             this.context = Application.Context;
 
             if (this.context.PackageManager.CheckPermission(
-                Manifest.Permission.ReadExternalStorage,
+                Manifest.Permission.WriteExternalStorage,
                 this.context.PackageName) == Permission.Granted)
             {
                 this.StartPicker();
@@ -59,7 +61,7 @@ namespace Plugin.FilePicker
             {
                 if ((int)Build.VERSION.SdkInt >= 23)
                 {
-                    this.RequestPermissions(new string[] { Manifest.Permission.ReadExternalStorage }, RequestStorage);
+                    this.RequestPermissions(new string[] { Manifest.Permission.WriteExternalStorage }, RequestStorage);
                 }
                 else
                 {
@@ -80,8 +82,8 @@ namespace Plugin.FilePicker
         {
             if (requestCode == RequestStorage)
             {
-                if (grantResults.Length > 0 &&
-                    grantResults[0] == Permission.Granted)
+                if (grantResults.Any() &&
+                    grantResults.All(perm => perm == Permission.Granted))
                 {
                     this.StartPicker();
                 }
@@ -98,7 +100,9 @@ namespace Plugin.FilePicker
         /// </summary>
         private void StartPicker()
         {
-            var intent = new Intent(Intent.ActionGetContent);
+            bool saving = Intent.GetBooleanExtra(PromptType, false);
+
+            var intent = new Intent(saving ? Intent.ActionCreateDocument : Intent.ActionOpenDocument);
 
             intent.SetType("*/*");
 

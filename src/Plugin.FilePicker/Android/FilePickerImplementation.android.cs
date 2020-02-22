@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 // Adds permission for READ_EXTERNAL_STORAGE to the AndroidManifest.xml of the app project without
 // the user of the plugin having to add it by himself/herself.
-[assembly: UsesPermission(Android.Manifest.Permission.ReadExternalStorage)]
+[assembly: UsesPermission(Android.Manifest.Permission.WriteExternalStorage)]
 
 namespace Plugin.FilePicker
 {
@@ -55,9 +55,9 @@ namespace Plugin.FilePicker
         /// <returns>
         /// File data object, or null when user cancelled picking file
         /// </returns>
-        public async Task<FileData> PickFile(string[] allowedTypes)
+        public async Task<FileData> PickFile(string[] allowedTypes, bool saving)
         {
-            var fileData = await this.PickFileAsync(allowedTypes, Intent.ActionGetContent);
+            var fileData = await this.PickFileAsync(allowedTypes, saving);
 
             return fileData;
         }
@@ -68,7 +68,7 @@ namespace Plugin.FilePicker
         /// <param name="allowedTypes">list of allowed types; may be null</param>
         /// <param name="action">Android intent action to use; unused</param>
         /// <returns>picked file data, or null when picking was cancelled</returns>
-        private Task<FileData> PickFileAsync(string[] allowedTypes, string action)
+        private Task<FileData> PickFileAsync(string[] allowedTypes, bool saving)
         {
             var id = this.GetRequestId();
 
@@ -86,6 +86,7 @@ namespace Plugin.FilePicker
                 pickerIntent.SetFlags(ActivityFlags.NewTask);
 
                 pickerIntent.PutExtra(FilePickerActivity.ExtraAllowedTypes, allowedTypes);
+                pickerIntent.PutExtra(FilePickerActivity.PromptType, saving);
 
                 this.context.StartActivity(pickerIntent);
 
@@ -112,6 +113,18 @@ namespace Plugin.FilePicker
                             else
                             {
                                 return System.IO.File.OpenRead(e.FilePath);
+                            }
+                        }, 
+                        () =>
+                        {
+                            if (IOUtil.IsMediaStore(e.FilePath))
+                            {
+                                var contentUri = Android.Net.Uri.Parse(e.FilePath);
+                                return Application.Context.ContentResolver.OpenOutputStream(contentUri);
+                            }
+                            else
+                            {
+                                return System.IO.File.OpenWrite(e.FilePath);
                             }
                         }));
                 };
@@ -163,82 +176,6 @@ namespace Plugin.FilePicker
             }
 
             return id;
-        }
-
-        /// <summary>
-        /// Android implementation of saving a picked file to the external storage directory.
-        /// </summary>
-        /// <param name="fileToSave">picked file data for file to save</param>
-        /// <returns>true when file was saved successfully, false when not</returns>
-        public Task<bool> SaveFile(FileData fileToSave)
-        {
-            try
-            {
-                var myFile = new File(Android.OS.Environment.ExternalStorageDirectory, fileToSave.FileName);
-
-                if (myFile.Exists())
-                {
-                    return Task.FromResult(true);
-                }
-
-                var fos = new FileOutputStream(myFile.Path);
-
-                fos.Write(fileToSave.DataArray);
-                fos.Close();
-
-                return Task.FromResult(true);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-                return Task.FromResult(false);
-            }
-        }
-
-        /// <summary>
-        /// Android implementation of opening a file by using ActionView intent.
-        /// </summary>
-        /// <param name="fileToOpen">file to open in viewer</param>
-        public void OpenFile(File fileToOpen)
-        {
-            var uri = Android.Net.Uri.FromFile(fileToOpen);
-            var intent = new Intent();
-            var mime = IOUtil.GetMimeType(uri.ToString());
-
-            intent.SetAction(Intent.ActionView);
-            intent.SetDataAndType(uri, mime);
-            intent.SetFlags(ActivityFlags.NewTask);
-
-            this.context.StartActivity(intent);
-        }
-
-        /// <summary>
-        /// Android implementation of OpenFile(), opening a file already stored on external
-        /// storage.
-        /// </summary>
-        /// <param name="fileToOpen">relative filename of file to open</param>
-        public void OpenFile(string fileToOpen)
-        {
-            var myFile = new File(Android.OS.Environment.ExternalStorageDirectory, fileToOpen);
-
-            this.OpenFile(myFile);
-        }
-
-        /// <summary>
-        /// Android implementation of OpenFile(), opening a picked file in an external viewer. The
-        /// picked file is saved to external storage before opening.
-        /// </summary>
-        /// <param name="fileToOpen">picked file data</param>
-        public async void OpenFile(FileData fileToOpen)
-        {
-            var myFile = new File(Android.OS.Environment.ExternalStorageDirectory, fileToOpen.FileName);
-
-            if (!myFile.Exists())
-            {
-                await this.SaveFile(fileToOpen);
-            }
-
-            this.OpenFile(myFile);
         }
     }
 }

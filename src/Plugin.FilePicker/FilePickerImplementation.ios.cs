@@ -115,7 +115,7 @@ namespace Plugin.FilePicker
         /// <returns>
         /// File data object, or null when user cancelled picking file
         /// </returns>
-        public async Task<FileData> PickFile(string[] allowedTypes, bool saving)
+        public async Task<FileData> PickFile(string[] allowedTypes, string defaultName, bool saving)
         {
             var fileData = await this.PickMediaAsync(allowedTypes);
 

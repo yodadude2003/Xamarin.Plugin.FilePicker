@@ -1,7 +1,6 @@
 ﻿using Gtk;
 using Plugin.FilePicker.Abstractions;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -23,21 +22,25 @@ namespace Plugin.FilePicker
         /// corresponds how the Windows file open dialog specifies file types.
         /// </param>
         /// <returns>file data of picked file, or null when picking was cancelled</returns>
-        public Task<FileData> PickFile(string[] allowedTypes = null, bool saving = false)
+        public Task<FileData> PickFile(string[] allowedTypes = null, string defaultName = null, bool saving = false)
         {
-            var filter = new FileFilter();
-            foreach (var ext in allowedTypes)
-            {
-                filter.AddPattern($"*.{ext}");
-            }
-
             var picker = new Gtk.FileChooserDialog(
                 saving ? "Save As" : "Open",
                 null, saving ? FileChooserAction.Save : FileChooserAction.Open,
                 "Cancel", ResponseType.Cancel,
                 saving ? "Save As" : "Open", ResponseType.Accept
                 );
+
+            foreach (var type in allowedTypes)
+            {
+                var filter = new FileFilter();
+                filter.AddMimeType(type);
+                filter.Name = $"{type.Split('/')[0]} files (*.{type.Split('/')[1]})";
+                picker.AddFilter(filter);
+            }
+
             picker.SetCurrentFolder(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+            picker.CurrentName = defaultName;
 
             var result = picker.Run();
 

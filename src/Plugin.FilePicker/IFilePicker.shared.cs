@@ -25,12 +25,15 @@ namespace Plugin.FilePicker.Abstractions
         /// On WPF, specify strings like this: "Data type (*.ext)|*.ext", which
         /// corresponds how the Windows file open dialog specifies file types.
         /// </param>
+        /// <param name="defaultName">
+        /// Specifies the default file name to fill into the input field
+        /// </param>
         /// <param name="saving">
         /// Tells the implementor whether the action is intended to save a file or not
         /// </param>
         /// <returns>
         /// File data object, or null when user cancelled picking file
         /// </returns>
-        Task<FileData> PickFile(string[] allowedTypes = null, bool saving = false);
+        Task<FileData> PickFile(string[] allowedTypes = null, string defaultName = null, bool saving = false);
     }
 }

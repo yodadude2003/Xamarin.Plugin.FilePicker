@@ -12,7 +12,7 @@ namespace Plugin.FilePicker
 {
     public class FilePickerImplementation : NSObject, IFilePicker
     {
-        public Task<FileData> PickFile(string[] allowedTypes, bool saving)
+        public Task<FileData> PickFile(string[] allowedTypes, string defaultName, bool saving)
         {
             // for consistency with other platforms, only allow selecting of a single file.
             // would be nice if we passed a "file options" to override picking multiple files & directories

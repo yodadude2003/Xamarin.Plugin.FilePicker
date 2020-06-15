@@ -1,7 +1,5 @@
 using Android.App;
 using Android.Content;
-using Android.Runtime;
-using Java.IO;
 using Plugin.FilePicker.Abstractions;
 using System;
 using System.Diagnostics;
@@ -40,7 +38,7 @@ namespace Plugin.FilePicker
         /// </summary>
         public FilePickerImplementation()
         {
-            this.context = Application.Context;
+            context = Application.Context;
         }
 
         /// <summary>
@@ -55,10 +53,9 @@ namespace Plugin.FilePicker
         /// <returns>
         /// File data object, or null when user cancelled picking file
         /// </returns>
-        public async Task<FileData> PickFile(string[] allowedTypes, bool saving)
+        public async Task<FileData> PickFile(string[] allowedTypes, string defaultName, bool saving)
         {
-            var fileData = await this.PickFileAsync(allowedTypes, saving);
-
+            var fileData = await PickFileAsync(allowedTypes, defaultName, saving);
             return fileData;
         }
 
@@ -68,13 +65,13 @@ namespace Plugin.FilePicker
         /// <param name="allowedTypes">list of allowed types; may be null</param>
         /// <param name="action">Android intent action to use; unused</param>
         /// <returns>picked file data, or null when picking was cancelled</returns>
-        private Task<FileData> PickFileAsync(string[] allowedTypes, bool saving)
+        private Task<FileData> PickFileAsync(string[] allowedTypes, string defaultName, bool saving)
         {
-            var id = this.GetRequestId();
+            var id = GetRequestId();
 
             var ntcs = new TaskCompletionSource<FileData>(id);
 
-            var previousTcs = Interlocked.Exchange(ref this.completionSource, ntcs);
+            var previousTcs = Interlocked.Exchange(ref completionSource, ntcs);
             if (previousTcs != null)
             {
                 previousTcs.TrySetResult(null);
@@ -82,20 +79,21 @@ namespace Plugin.FilePicker
 
             try
             {
-                var pickerIntent = new Intent(this.context, typeof(FilePickerActivity));
+                var pickerIntent = new Intent(context, typeof(FilePickerActivity));
                 pickerIntent.SetFlags(ActivityFlags.NewTask);
 
                 pickerIntent.PutExtra(FilePickerActivity.ExtraAllowedTypes, allowedTypes);
+                pickerIntent.PutExtra(FilePickerActivity.FileName, defaultName);
                 pickerIntent.PutExtra(FilePickerActivity.PromptType, saving);
 
-                this.context.StartActivity(pickerIntent);
+                context.StartActivity(pickerIntent);
 
                 EventHandler<FilePickerEventArgs> handler = null;
                 EventHandler<FilePickerCancelledEventArgs> cancelledHandler = null;
 
                 handler = (s, e) =>
                 {
-                    var tcs = Interlocked.Exchange(ref this.completionSource, null);
+                    var tcs = Interlocked.Exchange(ref completionSource, null);
 
                     FilePickerActivity.FilePickCancelled -= cancelledHandler;
                     FilePickerActivity.FilePicked -= handler;
@@ -131,7 +129,7 @@ namespace Plugin.FilePicker
 
                 cancelledHandler = (s, e) =>
                 {
-                    var tcs = Interlocked.Exchange(ref this.completionSource, null);
+                    var tcs = Interlocked.Exchange(ref completionSource, null);
 
                     FilePickerActivity.FilePickCancelled -= cancelledHandler;
                     FilePickerActivity.FilePicked -= handler;
@@ -152,10 +150,10 @@ namespace Plugin.FilePicker
             catch (Exception ex)
             {
                 Debug.Write(ex);
-                this.completionSource.SetException(ex);
+                completionSource.SetException(ex);
             }
 
-            return this.completionSource.Task;
+            return completionSource.Task;
         }
 
         /// <summary>
@@ -164,15 +162,15 @@ namespace Plugin.FilePicker
         /// <returns>new request ID</returns>
         private int GetRequestId()
         {
-            int id = this.requestId;
+            int id = requestId;
 
-            if (this.requestId == int.MaxValue)
+            if (requestId == int.MaxValue)
             {
-                this.requestId = 0;
+                requestId = 0;
             }
             else
             {
-                this.requestId++;
+                requestId++;
             }
 
             return id;

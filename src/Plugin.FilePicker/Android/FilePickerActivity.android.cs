@@ -1,5 +1,7 @@
+using Android;
 using Android.App;
 using Android.Content;
+using Android.Content.PM;
 using Android.OS;
 using Android.Provider;
 using Android.Runtime;
@@ -7,16 +9,10 @@ using Plugin.FilePicker.Abstractions;
 using System;
 using System.Linq;
 using System.Net;
-using Android;
-using Android.Content.PM;
 
 namespace Plugin.FilePicker
 {
-    /// <summary>
-    /// Activity that is shown in order to start Android file picking using ActionGetContent
-    /// intent.
-    /// </summary>
-    [Activity(ConfigurationChanges = Android.Content.PM.ConfigChanges.Orientation | Android.Content.PM.ConfigChanges.ScreenSize)]
+    [Activity(ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize)]
     [Preserve(AllMembers = true)]
     public class FilePickerActivity : Activity
     {
@@ -25,6 +21,14 @@ namespace Plugin.FilePicker
         /// </summary>
         public const string ExtraAllowedTypes = "EXTRA_ALLOWED_TYPES";
 
+        /// <summary>
+        /// Intent Extra constant to pass default file name to display when saving a file.
+        /// </summary>
+        public const string FileName = "PROMPT_TYPE";
+
+        /// <summary>
+        /// Intent Extra constant to pass whether picker is for saving or opening a file.
+        /// </summary>
         public const string PromptType = "PROMPT_TYPE";
 
         /// <summary>
@@ -49,19 +53,19 @@ namespace Plugin.FilePicker
         {
             base.OnCreate(savedInstanceState);
 
-            this.context = Application.Context;
+            context = Application.Context;
 
-            if (this.context.PackageManager.CheckPermission(
+            if (context.PackageManager.CheckPermission(
                 Manifest.Permission.WriteExternalStorage,
-                this.context.PackageName) == Permission.Granted)
+                context.PackageName) == Permission.Granted)
             {
-                this.StartPicker();
+                StartPicker();
             }
             else
             {
                 if ((int)Build.VERSION.SdkInt >= 23)
                 {
-                    this.RequestPermissions(new string[] { Manifest.Permission.WriteExternalStorage }, RequestStorage);
+                    RequestPermissions(new string[] { Manifest.Permission.WriteExternalStorage }, RequestStorage);
                 }
                 else
                 {
@@ -73,9 +77,9 @@ namespace Plugin.FilePicker
 
         /// <summary>
         /// Receives the answer from the dialog that asks for the READ_EXTERNAL_STORAGE permission
-        /// and starts the FilePicker if it's granted or otherwise closes this activity.
+        /// and starts the FilePicker if it's granted or otherwise closes activity.
         /// </summary>
-        /// <param name="requestCode">requestCode; shows us that the dialog we requested is responsible for this answer</param>
+        /// <param name="requestCode">requestCode; shows us that the dialog we requested is responsible for answer</param>
         /// <param name="permissions">permissions; unused</param>
         /// <param name="grantResults">grantResults; contains the result of the dialog to request the permission</param>
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
@@ -85,12 +89,12 @@ namespace Plugin.FilePicker
                 if (grantResults.Any() &&
                     grantResults.All(perm => perm == Permission.Granted))
                 {
-                    this.StartPicker();
+                    StartPicker();
                 }
                 else
                 {
                     OnFilePickCancelled();
-                    this.Finish();
+                    Finish();
                 }
             }
         }
@@ -101,10 +105,12 @@ namespace Plugin.FilePicker
         private void StartPicker()
         {
             bool saving = Intent.GetBooleanExtra(PromptType, false);
+            string defaultName = Intent.GetStringExtra(FileName);
 
             var intent = new Intent(saving ? Intent.ActionCreateDocument : Intent.ActionOpenDocument);
 
             intent.SetType("*/*");
+            intent.PutExtra(Intent.ExtraTitle, defaultName);
 
             string[] allowedTypes = Intent.GetStringArrayExtra(ExtraAllowedTypes)?.
                 Where(o => !string.IsNullOrEmpty(o) && o.Contains("/")).ToArray();
@@ -117,7 +123,7 @@ namespace Plugin.FilePicker
             intent.AddCategory(Intent.CategoryOpenable);
             try
             {
-                this.StartActivityForResult(Intent.CreateChooser(intent, "Select file"), 0);
+                StartActivityForResult(Intent.CreateChooser(intent, "Select file"), 0);
             }
             catch (Exception ex)
             {
@@ -139,7 +145,7 @@ namespace Plugin.FilePicker
             {
                 // Notify user file picking was cancelled.
                 OnFilePickCancelled();
-                this.Finish();
+                Finish();
             }
             else
             {
@@ -152,14 +158,14 @@ namespace Plugin.FilePicker
 
                     var uri = data.Data;
 
-                    var filePath = IOUtil.GetPath(this.context, uri);
+                    var filePath = IOUtil.GetPath(context, uri);
 
                     if (string.IsNullOrEmpty(filePath))
                     {
                         filePath = IOUtil.IsMediaStore(uri.Scheme) ? uri.ToString() : uri.Path;
                     }
 
-                    var fileName = this.GetFileName(this.context, uri);
+                    var fileName = GetFileName(context, uri);
 
                     OnFilePicked(new FilePickerEventArgs(fileName, filePath));
                 }
@@ -177,7 +183,7 @@ namespace Plugin.FilePicker
                 }
                 finally
                 {
-                    this.Finish();
+                    Finish();
                 }
             }
         }

@@ -14,7 +14,7 @@ namespace Plugin.FilePicker
     /// <summary>
     /// Implementation for file picking on iOS
     /// </summary>
-    public class FilePickerImplementation : NSObject, IFilePicker
+    public class PlatformFilePicker : NSObject, IFilePicker
     {
         /// <summary>
         /// Request ID for current picking call
@@ -165,18 +165,7 @@ namespace Plugin.FilePicker
             this.Handler = (sender, args) =>
             {
                 var tcs = Interlocked.Exchange(ref this.completionSource, null);
-
-                tcs?.SetResult(new FileData(
-                    args.FilePath,
-                    args.FileName,
-                    () =>
-                    {
-                        return new FileStream(args.FilePath, FileMode.Open, FileAccess.Read);
-                    },
-                    () =>
-                    {
-                        return new FileStream(args.FilePath, FileMode.Open, FileAccess.Write);
-                    }));
+                tcs?.SetResult(new PlatformFileData(args.FilePath));
             };
 
             return this.completionSource.Task;

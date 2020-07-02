@@ -1,8 +1,10 @@
 using Android.App;
 using Android.Content;
+using Android.Runtime;
 using Plugin.FilePicker.Abstractions;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,7 +18,7 @@ namespace Plugin.FilePicker
     /// Implementation for file picking on Android
     /// </summary>
     [Preserve(AllMembers = true)]
-    public class FilePickerImplementation : IFilePicker
+    public class PlatformFilePicker : IFilePicker
     {
         /// <summary>
         /// Android context to use for picking
@@ -36,7 +38,7 @@ namespace Plugin.FilePicker
         /// <summary>
         /// Creates a new file picker implementation
         /// </summary>
-        public FilePickerImplementation()
+        public PlatformFilePicker()
         {
             context = Application.Context;
         }
@@ -98,33 +100,7 @@ namespace Plugin.FilePicker
                     FilePickerActivity.FilePickCancelled -= cancelledHandler;
                     FilePickerActivity.FilePicked -= handler;
 
-                    tcs?.SetResult(new FileData(
-                        e.FilePath,
-                        e.FileName,
-                        () =>
-                        {
-                            if (IOUtil.IsMediaStore(e.FilePath))
-                            {
-                                var contentUri = Android.Net.Uri.Parse(e.FilePath);
-                                return Application.Context.ContentResolver.OpenInputStream(contentUri);
-                            }
-                            else
-                            {
-                                return System.IO.File.OpenRead(e.FilePath);
-                            }
-                        }, 
-                        () =>
-                        {
-                            if (IOUtil.IsMediaStore(e.FilePath))
-                            {
-                                var contentUri = Android.Net.Uri.Parse(e.FilePath);
-                                return Application.Context.ContentResolver.OpenOutputStream(contentUri);
-                            }
-                            else
-                            {
-                                return System.IO.File.OpenWrite(e.FilePath);
-                            }
-                        }));
+                    tcs?.SetResult(new PlatformFileData(e.FilePath));
                 };
 
                 cancelledHandler = (s, e) =>

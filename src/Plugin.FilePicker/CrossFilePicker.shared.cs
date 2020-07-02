@@ -40,7 +40,7 @@ namespace Plugin.FilePicker
 #if NETSTANDARD1_0 || NETSTANDARD2_0
             return null;
 #else
-            return new FilePickerImplementation();
+            return new PlatformFilePicker();
 #endif
         }
 

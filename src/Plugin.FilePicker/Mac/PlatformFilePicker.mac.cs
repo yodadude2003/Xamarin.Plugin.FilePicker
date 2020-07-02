@@ -10,7 +10,7 @@ using Plugin.FilePicker.Abstractions;
 
 namespace Plugin.FilePicker
 {
-    public class FilePickerImplementation : NSObject, IFilePicker
+    public class PlatformFilePicker : NSObject, IFilePicker
     {
         public Task<FileData> PickFile(string[] allowedTypes, string defaultName, bool saving)
         {
@@ -39,8 +39,7 @@ namespace Plugin.FilePicker
                 if (url != null)
                 {
                     var path = url.Path;
-                    var fileName = Path.GetFileName(path);
-                    data = new FileData(path, fileName, () => File.OpenRead(path), () => File.OpenWrite(path));
+                    data = new PlatformFileData(path);
                 }
             }
 

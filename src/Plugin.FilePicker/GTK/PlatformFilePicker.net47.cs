@@ -9,7 +9,7 @@ namespace Plugin.FilePicker
     /// <summary>
     /// Implementation for file picking on WPF platform
     /// </summary>
-    public class FilePickerImplementation : IFilePicker
+    public class PlatformFilePicker : IFilePicker
     {
         /// <summary>
         /// File picker implementation for WPF; uses the Win32 OpenFileDialog from
@@ -46,16 +46,14 @@ namespace Plugin.FilePicker
 
             if (result == (int)Gtk.ResponseType.Accept)
             {
-                var fileName = Path.GetFileName(picker.Filename);
-                var data = new FileData(picker.Filename, fileName, () => File.OpenRead(picker.Filename), () => File.OpenWrite(picker.Filename));
-                picker.Hide();
-                picker.Dispose();
+                FileData data = new PlatformFileData(picker.Filename);
+
+                picker.Destroy();
                 return Task.FromResult(data);
             }
             else
             {
-                picker.Hide();
-                picker.Dispose();
+                picker.Destroy();
                 return Task.FromResult<FileData>(null);
             }
         }

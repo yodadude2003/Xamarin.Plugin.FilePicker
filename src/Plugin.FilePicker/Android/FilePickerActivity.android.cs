@@ -24,7 +24,7 @@ namespace Plugin.FilePicker
         /// <summary>
         /// Intent Extra constant to pass default file name to display when saving a file.
         /// </summary>
-        public const string FileName = "PROMPT_TYPE";
+        public const string FileName = "PROMPT_FILENAME";
 
         /// <summary>
         /// Intent Extra constant to pass whether picker is for saving or opening a file.
